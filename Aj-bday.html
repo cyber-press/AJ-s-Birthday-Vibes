@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AJ’s Birthday Vibes – Multi-Player</title>
+<style>
+  :root { --bg:#0b0f14; --ink:#eaf2ff; --muted:#93a2b3; --brand:#2563eb; }
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  header{padding:20px 16px;text-align:center}
+  h1{margin:0 0 6px;font-size:clamp(20px,3.4vw,32px)}
+  p{margin:0;color:var(--muted)}
+  .tabs{display:flex;gap:8px;justify-content:center;margin:16px 0 12px;flex-wrap:wrap}
+  .tabs button{padding:10px 14px;border-radius:999px;border:0;background:#1f2937;color:var(--ink);cursor:pointer;transition:.2s}
+  .tabs button.active{background:var(--brand)}
+  .card{max-width:960px;margin:0 auto;padding:16px}
+  iframe{width:100%;height:480px;border:0;border-radius:16px;background:#000}
+  @media (max-width:640px){iframe{height:360px}}
+  .grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-top:14px}
+  .track{background:#111827;border:1px solid #111; padding:10px;border-radius:12px}
+  .track b{display:block;margin-bottom:4px}
+  footer{opacity:.72;text-align:center;padding:18px 10px;font-size:12px}
+  .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+  input,button.small{padding:8px 10px;border-radius:10px;border:1px solid #222;background:#0f172a;color:var(--ink)}
+  button.small{cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <h1>AJ’s Birthday Vibes</h1>
+  <p>Spotify is here for the official playlist.</p>
+</header>
+
+<div class="tabs">
+  <button data-tab="spotify">Spotify</button>
+</div>
+
+<main class="card">
+  <iframe id="player" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"></iframe>
+  <div id="ytList" class="grid" hidden></div>
+</main>
+
+<footer>@2025 | Powered by PressCreates</footer>
+
+<script>
+  // Config — put your embeds here
+  const LINKS = {
+    spotify: "https://open.spotify.com/embed/playlist/4g9HKasxwr7IuP2Z4hzSso",
+  };
+
+  const qs = new URLSearchParams(location.search);
+  const API_KEY = "AIzaSyCTzkQGUf_IWMk4J7i9djvsBBIxwWNF0fA";
+
+  const tabs = document.querySelectorAll('.tabs button');
+  const frame = document.getElementById('player');
+  const ytList = document.getElementById('ytList');
+  const ytUrl  = document.getElementById('ytUrl');
+  const ytLoad = document.getElementById('ytLoad');
+
+  function setActive(tab) {
+    tabs.forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  }
+
+  function toEmbedYouTubePlaylist(id) {
+    return `https://www.youtube.com/embed/videoseries?list=${id}`;
+  }
+
+  function extractPlaylistId(val) {
+    if (!val) return "";
+    try {
+      if (val.startsWith('http')) {
+        const u = new URL(val);
+        // Supports both list param and /playlist?list=ID patterns
+        return u.searchParams.get('list') || (u.pathname.includes('/playlist') ? u.searchParams.get('list') : "");
+      }
+      return val; // already an ID
+    } catch { return ""; }
+  }
+
+  async function loadYouTubeItems(playlistId) {
+    if (!API_KEY) return; // only fetch if key provided
+    ytList.innerHTML = "";
+    ytList.hidden = true;
+    try {
+      const url = new URL('https://www.googleapis.com/youtube/v3/playlistItems');
+      url.search = new URLSearchParams({
+        key: API_KEY,
+        part: 'snippet,contentDetails',
+        maxResults: '25',
+        playlistId
+      });
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      data.items?.forEach(it => {
+        const vId = it.contentDetails?.videoId;
+        const t = it.snippet?.title || "Untitled";
+        const th = it.snippet?.thumbnails?.medium?.url || "";
+        const card = document.createElement('div');
+        card.className = 'track';
+        card.innerHTML = `
+          <img src="${th}" alt="" style="width:100%;border-radius:10px;aspect-ratio:16/9;object-fit:cover;margin-bottom:8px" />
+          <b>${t}</b>
+          <button class="small" data-video="${vId}">Play</button>
+        `;
+        ytList.appendChild(card);
+      });
+      if (data.items?.length) ytList.hidden = false;
+      ytList.addEventListener('click', e=>{
+        const btn = e.target.closest('button[data-video]');
+        if (btn) {
+          const v = btn.dataset.video;
+          frame.src = `https://www.youtube.com/embed/${v}`;
+          setActive('youtube');
+        }
+      }, { once: true });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Tab switching
+  document.querySelector('.tabs').addEventListener('click', e => {
+    const tab = e.target.dataset.tab;
+    if (!tab) return;
+    setActive(tab);
+    if (tab === 'spotify') {
+      frame.src = LINKS.spotify;
+    } else if (tab === 'audius') {
+      frame.src = LINKS.audius;
+    }
+  });
+
+  // Initial default: YouTube (no skip cap)
+  setActive('youtube');
+  frame.src = "about:blank";
+
+  // Load YouTube playlist from input
+  ytLoad.addEventListener('click', () => {
+    const id = extractPlaylistId(ytUrl.value.trim());
+    if (id) {
+      frame.src = toEmbedYouTubePlaylist(id);
+      if (API_KEY) loadYouTubeItems(id);
+    } else {
+      alert("Enter a valid YouTube playlist URL or ID.");
+    }
+  });
+</script>
+</body>
+</html>
