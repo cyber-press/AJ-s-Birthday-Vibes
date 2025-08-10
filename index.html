@@ -1,150 +1,170 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>AJ’s Birthday Vibes – Multi-Player</title>
-<style>
-  :root { --bg:#0b0f14; --ink:#eaf2ff; --muted:#93a2b3; --brand:#2563eb; }
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  header{padding:20px 16px;text-align:center}
-  h1{margin:0 0 6px;font-size:clamp(20px,3.4vw,32px)}
-  p{margin:0;color:var(--muted)}
-  .tabs{display:flex;gap:8px;justify-content:center;margin:16px 0 12px;flex-wrap:wrap}
-  .tabs button{padding:10px 14px;border-radius:999px;border:0;background:#1f2937;color:var(--ink);cursor:pointer;transition:.2s}
-  .tabs button.active{background:var(--brand)}
-  .card{max-width:960px;margin:0 auto;padding:16px}
-  iframe{width:100%;height:480px;border:0;border-radius:16px;background:#000}
-  @media (max-width:640px){iframe{height:360px}}
-  .grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-top:14px}
-  .track{background:#111827;border:1px solid #111; padding:10px;border-radius:12px}
-  .track b{display:block;margin-bottom:4px}
-  footer{opacity:.72;text-align:center;padding:18px 10px;font-size:12px}
-  .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}
-  input,button.small{padding:8px 10px;border-radius:10px;border:1px solid #222;background:#0f172a;color:var(--ink)}
-  button.small{cursor:pointer}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AJ’s Birthday Vibes – Dual Player</title>
+  <style>
+    :root{
+      --bg:#0a0f1a;
+      --ink:#eaf2ff;
+      --muted:#8ea0b8;
+      --brand:#6ee7ff;
+      --accent:#a78bfa;
+    }
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,sans-serif}
+    header{text-align:center;padding:28px 16px}
+    h1{margin:0 0 8px;font-size:clamp(22px,4.5vw,36px)}
+    p{margin:0;color:var(--muted)}
+    .shell{max-width:1000px;margin:20px auto;padding:0 16px}
+    .card{background:rgba(255,255,255,.04);border-radius:20px;padding:16px}
+    .tabs{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+    .tabs button{padding:10px 14px;border-radius:999px;border:0;cursor:pointer;color:var(--ink);background:rgba(255,255,255,.08)}
+    .tabs button.active{background:linear-gradient(90deg,var(--brand),var(--accent))}
+    .controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 12px}
+    .controls input{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1220;color:var(--ink);min-width:260px}
+    .controls button{padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#10182b;color:var(--ink);cursor:pointer}
+    iframe{width:100%;border:0;border-radius:12px}
+    footer{opacity:.75;text-align:center;padding:24px 10px;font-size:12px}
+    .tip{color:var(--muted);text-align:center;margin-top:8px;font-size:13px}
+    .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-top:12px}
+    .cardv{background:#0f172a;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:8px}
+    .cardv img{width:100%;border-radius:8px;aspect-ratio:16/9;object-fit:cover}
+    .cardv b{display:block;margin:8px 0 4px;font-size:14px}
+    .cardv small{color:var(--muted)}
+  </style>
 </head>
 <body>
-<header>
-  <h1>AJ’s Birthday Vibes</h1>
-  <p>Spotify is here for the official playlist.</p>
-</header>
+  <header>
+    <h1>AJ’s Birthday Vibes</h1>
+    <p>Switch between YouTube (search & play) and Spotify (official playlist)</p>
+  </header>
 
-<div class="tabs">
-  <button data-tab="spotify">Spotify</button>
-</div>
+  <div class="shell">
+    <div class="card">
+      <div class="tabs" id="tabs">
+        <button data-tab="youtube" class="active">YouTube</button>
+        <button data-tab="spotify">Spotify</button>
+      </div>
 
-<main class="card">
-  <iframe id="player" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"></iframe>
-  <div id="ytList" class="grid" hidden></div>
-</main>
+      <!-- YouTube search controls -->
+      <div class="controls" id="ytSearch">
+        <input id="ytQuery" placeholder="Search YouTube (e.g., Afrobeats party mix, GloRilla hits)" />
+        <button id="ytGo">Search</button>
+      </div>
 
-<footer>@2025 | Powered by PressCreates</footer>
+      <div id="youtubePlayer">
+        <iframe id="ytFrame" src="about:blank" height="480" allow="autoplay; picture-in-picture" allowfullscreen></iframe>
+        <div class="tip">Search results load below. Click any card to play, or it will auto-play a search playlist if the API is unavailable.</div>
+        <div id="ytResults" class="grid"></div>
+      </div>
 
-<script>
-  // Config — put your embeds here
-  const LINKS = {
-    spotify: "https://open.spotify.com/embed/playlist/4g9HKasxwr7IuP2Z4hzSso",
-  };
+      <div id="spotifyPlayer" style="display:none">
+        <iframe 
+          title="Spotify – AJ’s Birthday Vibes"
+          src="https://open.spotify.com/embed/playlist/4g9HKasxwr7IuP2Z4hzSso?si=cc6f65f8f8a84ca3"
+          width="100%"
+          height="420"
+          frameborder="0"
+          allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen"
+          loading="lazy"
+          style="border-radius:12px; background:#000">
+        </iframe>
+        <div class="tip">If the embed doesn’t load in your browser, <a href="https://open.spotify.com/playlist/4g9HKasxwr7IuP2Z4hzSso?si=cc6f65f8f8a84ca3" target="_blank" rel="noopener" style="color:#6ee7ff;text-decoration:underline">open the playlist on Spotify</a>.</div>
+      </div>
+    </div>
+    <footer>Built for Press • Mobile-friendly • Neon UI</footer>
+  </div>
 
-  const qs = new URLSearchParams(location.search);
-  const API_KEY = "AIzaSyCTzkQGUf_IWMk4J7i9djvsBBIxwWNF0fA";
+  <script>
+    // HARD-CODED YOUTUBE DATA API KEY (for private use). Consider regenerating & restricting.
+    const API_KEY = "AIzaSyCTzkQGUf_IWMk4J7i9djvsBBIxwWNF0fA";
 
-  const tabs = document.querySelectorAll('.tabs button');
-  const frame = document.getElementById('player');
-  const ytList = document.getElementById('ytList');
-  const ytUrl  = document.getElementById('ytUrl');
-  const ytLoad = document.getElementById('ytLoad');
+    const tabs = document.querySelectorAll('#tabs button');
+    const ytWrap = document.getElementById('youtubePlayer');
+    const spWrap = document.getElementById('spotifyPlayer');
+    const ytSearch = document.getElementById('ytSearch');
+    const ytFrame = document.getElementById('ytFrame');
+    const ytQuery = document.getElementById('ytQuery');
+    const ytGo = document.getElementById('ytGo');
+    const ytResults = document.getElementById('ytResults');
 
-  function setActive(tab) {
-    tabs.forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-  }
+    function setActive(tab){
+      tabs.forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+      const ytActive = tab==='youtube';
+      ytWrap.style.display = ytActive ? 'block' : 'none';
+      ytSearch.style.display = ytActive ? 'flex' : 'none';
+      spWrap.style.display = ytActive ? 'none' : 'block';
+    }
 
-  function toEmbedYouTubePlaylist(id) {
-    return `https://www.youtube.com/embed/videoseries?list=${id}`;
-  }
+    function toEmbedVideo(id){
+      return `https://www.youtube.com/embed/${id}`;
+    }
 
-  function extractPlaylistId(val) {
-    if (!val) return "";
-    try {
-      if (val.startsWith('http')) {
-        const u = new URL(val);
-        // Supports both list param and /playlist?list=ID patterns
-        return u.searchParams.get('list') || (u.pathname.includes('/playlist') ? u.searchParams.get('list') : "");
-      }
-      return val; // already an ID
-    } catch { return ""; }
-  }
+    function toEmbedSearch(q){
+      return `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(q)}`;
+    }
 
-  async function loadYouTubeItems(playlistId) {
-    if (!API_KEY) return; // only fetch if key provided
-    ytList.innerHTML = "";
-    ytList.hidden = true;
-    try {
-      const url = new URL('https://www.googleapis.com/youtube/v3/playlistItems');
-      url.search = new URLSearchParams({
-        key: API_KEY,
-        part: 'snippet,contentDetails',
-        maxResults: '25',
-        playlistId
-      });
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      data.items?.forEach(it => {
-        const vId = it.contentDetails?.videoId;
-        const t = it.snippet?.title || "Untitled";
-        const th = it.snippet?.thumbnails?.medium?.url || "";
-        const card = document.createElement('div');
-        card.className = 'track';
-        card.innerHTML = `
-          <img src="${th}" alt="" style="width:100%;border-radius:10px;aspect-ratio:16/9;object-fit:cover;margin-bottom:8px" />
-          <b>${t}</b>
-          <button class="small" data-video="${vId}">Play</button>
-        `;
-        ytList.appendChild(card);
-      });
-      if (data.items?.length) ytList.hidden = false;
-      ytList.addEventListener('click', e=>{
-        const btn = e.target.closest('button[data-video]');
-        if (btn) {
-          const v = btn.dataset.video;
-          frame.src = `https://www.youtube.com/embed/${v}`;
-          setActive('youtube');
+    async function searchYouTube(q){
+      ytResults.innerHTML = '';
+      const query = q.trim();
+      if(!query){ ytFrame.src = 'about:blank'; return; }
+
+      // Try API search first for clickable results
+      try{
+        const url = new URL('https://www.googleapis.com/youtube/v3/search');
+        url.search = new URLSearchParams({
+          key: API_KEY,
+          part: 'snippet',
+          type: 'video',
+          maxResults: '12',
+          q: query,
+          videoEmbeddable: 'true'
+        });
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('API error');
+        const data = await res.json();
+        if(Array.isArray(data.items) && data.items.length){
+          // Render cards
+          data.items.forEach(item => {
+            const vId = item.id.videoId;
+            const s = item.snippet;
+            const div = document.createElement('div');
+            div.className = 'cardv';
+            div.innerHTML = `
+              <img src="${s.thumbnails?.medium?.url || ''}" alt="" />
+              <b>${s.title}</b>
+              <small>${s.channelTitle || ''}</small>
+              <button class="playBtn" data-v="${vId}" style="margin-top:6px;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#10182b;color:var(--ink);cursor:pointer">Play</button>
+            `;
+            ytResults.appendChild(div);
+          });
+          // Auto-play first result
+          const first = data.items[0]?.id?.videoId;
+          if(first) ytFrame.src = toEmbedVideo(first);
+          // Delegate clicks
+          ytResults.addEventListener('click', e => {
+            const b = e.target.closest('.playBtn');
+            if(b){ ytFrame.src = toEmbedVideo(b.dataset.v); }
+          }, { once: true });
+          return;
         }
-      }, { once: true });
-    } catch (err) {
-      console.error(err);
+        // Fallback to embed search if no items returned
+        ytFrame.src = toEmbedSearch(query);
+      } catch(err){
+        // If API fails (quota/restriction), fallback to embedded search playlist
+        ytFrame.src = toEmbedSearch(query);
+      }
     }
-  }
 
-  // Tab switching
-  document.querySelector('.tabs').addEventListener('click', e => {
-    const tab = e.target.dataset.tab;
-    if (!tab) return;
-    setActive(tab);
-    if (tab === 'spotify') {
-      frame.src = LINKS.spotify;
-    } else if (tab === 'audius') {
-      frame.src = LINKS.audius;
-    }
-  });
+    tabs.forEach(btn=> btn.addEventListener('click', ()=> setActive(btn.dataset.tab)) );
+    ytGo.addEventListener('click', ()=> searchYouTube(ytQuery.value));
+    ytQuery.addEventListener('keydown', e=>{ if(e.key==='Enter') searchYouTube(ytQuery.value); });
 
-  // Initial default: YouTube (no skip cap)
-  setActive('youtube');
-  frame.src = "about:blank";
-
-  // Load YouTube playlist from input
-  ytLoad.addEventListener('click', () => {
-    const id = extractPlaylistId(ytUrl.value.trim());
-    if (id) {
-      frame.src = toEmbedYouTubePlaylist(id);
-      if (API_KEY) loadYouTubeItems(id);
-    } else {
-      alert("Enter a valid YouTube playlist URL or ID.");
-    }
-  });
-</script>
+    // Default
+    setActive('youtube');
+    ytQuery.value = 'Afrobeats party mix 2025';
+    searchYouTube(ytQuery.value);
+  </script>
 </body>
 </html>
